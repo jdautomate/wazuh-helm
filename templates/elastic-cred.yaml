@@ -1,7 +1,7 @@
 apiVersion: v1
 data:
-  password: # hashed pass
-  username: YWRtaW4=
+  password: # pass
+  username: YWRtaW4= #admin
 kind: Secret
 metadata:
   name: elastic-cred
