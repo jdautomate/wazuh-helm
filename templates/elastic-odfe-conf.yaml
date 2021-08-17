@@ -151,24 +151,12 @@ data:
         - "admin"
         - "sysadmins"
         users:
-        - "justin.leber"
-        - "andrew.proctor"
-        - "jeff.chonoplis"
-        - "ray.chandler"
-        - "mykola.stolyarenko"
-        - "heorhii.artemiev"
-        - "andrii.savaliev"
+        - "*"
         description: "Maps admin to all_access"
       all_access_copy:
         reserved: false
         users:
-          - "justin.leber"
-          - "andrew.proctor"
-          - "jeff.chonoplis"
-          - "ray.chandler"
-          - "mykola.stolyarenko"
-          - "heorhii.artemiev"
-          - "andrii.savaliev"
+          - "*"
         backend_roles:
           - "admin"
           - "editor"
@@ -181,14 +169,7 @@ data:
         reserved: false
         backend_roles:
         - "logstash"
-        - "sysadmins"
-        - "justin.leber"
-        - "andrew.proctor"
-        - "jeff.chonoplis"
-        - "ray.chandler"
-        - "mykola.stolyarenko"
-        - "heorhii.artemiev"
-        - "andrii.savaliev"
+        - "*"
       kibana_user:
         reserved: false
         backend_roles:
@@ -197,51 +178,24 @@ data:
         users:
         - "wazuh_user"
         - "wazuh_admin"
-        - "justin.leber"
-        - "andrew.proctor"
-        - "jeff.chonoplis"
-        - "ray.chandler"
-        - "mykola.stolyarenko"
-        - "heorhii.artemiev"
-        - "andrii.savaliev"
+        - "*"
         description: "Maps kibanauser to kibana_user"
       readall:
         reserved: false
         backend_roles:
         - "readall"
-        - "sysadmins"
         users:
-        - "justin.leber"
-        - "andrew.proctor"
-        - "jeff.chonoplis"
-        - "ray.chandler"
-        - "mykola.stolyarenko"
-        - "heorhii.artemiev"
-        - "andrii.savaliev"
+        - "*"
       manage_snapshots:
         reserved: false
         backend_roles:
         - "snapshotrestore"
-        - "sysadmins"
-        - "justin.leber"
-        - "andrew.proctor"
-        - "jeff.chonoplis"
-        - "ray.chandler"
-        - "mykola.stolyarenko"
-        - "heorhii.artemiev"
-        - "andrii.savaliev"
+        - "*"
       kibana_server:
         reserved: true
         users:
         - "kibanaserver"
-        - "sysadmins"
-        - "justin.leber"
-        - "andrew.proctor"
-        - "jeff.chonoplis"
-        - "ray.chandler"
-        - "mykola.stolyarenko"
-        - "heorhii.artemiev"
-        - "andrii.savaliev"
+        - "*"
       wazuh_ui_admin:
         reserved: true
         hidden: false
@@ -250,14 +204,7 @@ data:
         users:
         - "wazuh_admin"
         - "kibanaserver"
-        - "sysadmins"
-        - "justin.leber"
-        - "andrew.proctor"
-        - "jeff.chonoplis"
-        - "ray.chandler"
-        - "mykola.stolyarenko"
-        - "heorhii.artemiev"
-        - "andrii.savaliev"
+        - "*"
         and_backend_roles: []
       wazuh_ui_user:
         reserved: true
@@ -265,15 +212,7 @@ data:
         backend_roles: []
         hosts: []
         users:
-        - "wazuh_user"
-        - "sysadmins"
-        - "justin.leber"
-        - "andrew.proctor"
-        - "jeff.chonoplis"
-        - "ray.chandler"
-        - "mykola.stolyarenko"
-        - "heorhii.artemiev"
-        - "andrii.savaliev"
+        - "*"
         and_backend_roles: []
 
   kibana.yml: |
