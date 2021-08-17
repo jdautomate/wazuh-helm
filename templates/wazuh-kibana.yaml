@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.kibana.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.kibana.name}}
+    chart: {{ template "wazuh.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.kibana.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.kibana.name }}
+      name: {{ .Values.kibana.name }}
+    spec:
+      volumes:
+        - name: kibana-certs
+          secret:
+            secretName: kibana-certs
+        - configMap:
+            name: elastic-odfe-conf
+          name: elastic-odfe-conf
+      containers:
+      - name: wazuh-kibana
+        image: {{ .Values.kibana.image }}:{{ .Values.kibana.tag }}
+        resources:
+        {{- toYaml .Values.kibana.resources | nindent 10 }}
+        volumeMounts:
+          - mountPath: /usr/share/kibana/config/cert.pem
+            name: kibana-certs
+            readOnly: true
+            subPath: cert.pem
+          - mountPath: /usr/share/kibana/config/key.pem
+            name: kibana-certs
+            readOnly: true
+            subPath: key.pem
+          - mountPath: /usr/share/kibana/config/kibana.yml
+            name: elastic-odfe-conf
+            readOnly: false
+            subPath: kibana.yml
+        ports:
+          - containerPort: {{ .Values.kibana.service.targetPort }}
+            name: {{ .Values.kibana.service.name }}
+        env:
+        {{- toYaml .Values.kibana.envVariables | nindent 10 }}

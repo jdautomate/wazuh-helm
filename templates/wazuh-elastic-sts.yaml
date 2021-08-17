@@ -1,0 +1,128 @@
+# Copyright (C) 2021 Wazuh Inc.
+#
+# This program is a free software; you can redistribute it
+# and/or modify it under the terms of the GNU General Public
+# License (version 2) as published by the FSF - Free Software
+# Foundation.
+
+# Elasticsearch StatefulSet: 3 master nodes.
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.wazuh_es.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.kibana.name}}
+    chart: {{ template "wazuh.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: {{ .Values.wazuh_es.name }}
+  serviceName: {{ .Values.wazuh_es.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.wazuh_es.name }}
+      name: {{ .Values.wazuh_es.name }}
+    spec:
+      # Set the wazuh-elasticsearch volume permissions so the elasticsearch user can use it
+      volumes:
+        - name: odfe-ssl-certs
+          secret:
+            secretName: odfe-ssl-certs
+        - name: elastic-odfe-conf
+          configMap:
+            name: elastic-odfe-conf
+      initContainers:
+        - name: volume-mount-hack
+          image: busybox
+          resources:
+          {{- toYaml .Values.wazuh_es.busyboxResources | nindent 12 }}
+          command:
+            - sh
+            - '-c'
+            - 'chown -R 1000:1000 /usr/share/elasticsearch/data'
+          volumeMounts:
+            - name: wazuh-elasticsearch
+              mountPath: /usr/share/elasticsearch/data
+        - name: increase-the-vm-max-map-count
+          image: busybox
+          command:
+            - sysctl
+            - -w
+            - vm.max_map_count=262144
+          securityContext:
+            privileged: true
+      containers:
+        - name: wazuh-elasticsearch
+          image: 'amazon/opendistro-for-elasticsearch:1.13.2'
+          resources:
+          {{- toYaml .Values.wazuh_es.resources | nindent 12 }}
+          env:
+          {{- toYaml .Values.wazuh_es.envVariables | nindent 12 }}
+          securityContext:
+            capabilities:
+              add: ["SYS_CHROOT"]
+          volumeMounts:
+            - name: wazuh-elasticsearch
+              mountPath: /usr/share/elasticsearch/data
+            - name: odfe-ssl-certs
+              mountPath: /usr/share/elasticsearch/config/node-key.pem
+              subPath: node-key.pem
+              readOnly: true
+            - name: odfe-ssl-certs
+              mountPath: /usr/share/elasticsearch/config/node.pem
+              subPath: node.pem
+              readOnly: true
+            - name: odfe-ssl-certs
+              mountPath: /usr/share/elasticsearch/config/root-ca.pem
+              subPath: root-ca.pem
+              readOnly: true
+            - name: odfe-ssl-certs
+              mountPath: /usr/share/elasticsearch/config/admin.pem
+              subPath: admin.pem
+              readOnly: true
+            - name: odfe-ssl-certs
+              mountPath: /usr/share/elasticsearch/config/admin-key.pem
+              subPath: admin-key.pem
+              readOnly: true
+            - name: elastic-odfe-conf
+              mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
+              subPath: elasticsearch.yml
+              readOnly: false
+            - name: elastic-odfe-conf
+              mountPath: /usr/share/elasticsearch/plugins/opendistro_security/securityconfig/internal_users.yml
+              subPath: internal_users.yml
+              readOnly: true
+            - name: elastic-odfe-conf
+              mountPath: /usr/share/elasticsearch/plugins/opendistro_security/securityconfig/config.yml
+              subPath: config.yml
+              readOnly: false
+            - name: elastic-odfe-conf
+              mountPath: /usr/share/elasticsearch/plugins/opendistro_security/securityconfig/roles_mapping.yml
+              subPath: roles_mapping.yml
+              readOnly: false
+            - name: odfe-ssl-certs
+              mountPath: /usr/share/elasticsearch/plugins/opendistro_security/securityconfig/metadata.xml
+              subPath: metadata.xml
+              readOnly: false
+          ports:
+            - containerPort: {{ .Values.wazuh_es.esrestPort }}
+              name: es-rest
+            - containerPort: {{ .Values.wazuh_es.esnodesPort }}
+              name: es-nodes
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ .Values.wazuh_es.name }}
+        namespace: es-cluster
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: {{ .Values.storageClassNGi }}
+        resources:
+          requests:
+            storage: 50Gi

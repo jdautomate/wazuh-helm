@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: {{ .Values.wazuh_es.name }}
+    chart: {{ template "wazuh.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  name: {{ .Values.wazuh_es.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  clusterIP: None
+  ports:
+  - name: es-nodes
+    port: {{ .Values.wazuh_es.esnodesPort }}
+    protocol: TCP
+    targetPort: {{ .Values.wazuh_es.esnodesPort }}
+  selector:
+    app: {{ .Values.wazuh_es.name }}

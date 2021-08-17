@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: {{ .Values.wazuh.app }}
+    chart: {{ template "wazuh.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  name: {{ .Values.workers.service.name }}
+  namespace: {{ .Values.namespace }}
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: {{ .Values.lbProtocol }}
+    service.beta.kubernetes.io/aws-load-balancer-name: {{ .Values.lbName }}
+    service.beta.kubernetes.io/aws-load-balancer-internal: "false" # temporary, prod will be internal
+    service.beta.kubernetes.io/aws-load-balancer-type: {{ .Values.lbType }}
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: {{ .Values.lbTargetType }}
+    service.beta.kubernetes.io/aws-load-balancer-scheme: {{ .Values.lbScheme }} # temporary
+spec:
+  type: LoadBalancer
+  selector:
+    app: {{ .Values.wazuh.app }}
+    node-type: worker
+  sessionAffinity: None
+  ports:
+  - name: agents-events
+    port: {{ .Values.workers.port }}
+    targetPort: {{ .Values.workers.port }}

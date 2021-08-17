@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+  labels:
+    app: {{ .Values.wazuh.app }}
+    chart: {{ template "wazuh.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  name: {{ .Values.wazuh.serviceName }}
+  namespace: {{ .Values.namespace }}
+spec:
+  clusterIP: None
+  ports:
+  - name: cluster
+    port: {{ .Values.wazuh.clusterPort }}
+    targetPort: {{ .Values.wazuh.clusterPort }}
+  selector:
+    app: {{ .Values.wazuh.app }}
+  sessionAffinity: None
+  type: ClusterIP

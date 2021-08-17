@@ -1,0 +1,308 @@
+apiVersion: v1
+data:
+  elasticsearch.yml: |
+    cluster.name: ${CLUSTER_NAME}
+    node.name: ${NODE_NAME}
+    network.host: ${NETWORK_HOST}
+    discovery.seed_hosts: wazuh-elasticsearch-0.wazuh-elasticsearch
+    cluster.initial_master_nodes:
+      - wazuh-elasticsearch-0
+
+    opendistro_security.ssl.transport.enabled: true
+    opendistro_security.ssl.transport.pemcert_filepath: node.pem
+    opendistro_security.ssl.transport.pemkey_filepath: node-key.pem
+    opendistro_security.ssl.transport.pemtrustedcas_filepath: root-ca.pem
+    opendistro_security.ssl.transport.enforce_hostname_verification: false
+    opendistro_security.ssl.http.enabled: true
+    opendistro_security.ssl.http.pemcert_filepath: node.pem
+    opendistro_security.ssl.http.pemkey_filepath: node-key.pem
+    opendistro_security.ssl.http.pemtrustedcas_filepath: root-ca.pem
+    opendistro_security.audit.type: internal_elasticsearch
+    opendistro_security.audit.config.index: "'security-auditlog-'YYYY.MM"
+    opendistro_security.allow_default_init_securityindex: true
+    opendistro_security.authcz.admin_dn:
+      - CN=admin,O=Company,L=California,C=US
+    opendistro_security.nodes_dn:
+      - CN=*.elasticsearch,O=Company,L=California,C=US
+    opendistro_security.enable_snapshot_restore_privilege: true
+    opendistro_security.check_snapshot_restore_write_privileges: true
+    opendistro_security.restapi.roles_enabled: ["all_access", "security_rest_api_access", "service_full_access"]
+
+    cluster.routing.allocation.disk.threshold_enabled: false
+
+  internal_users.yml: |
+    ---
+    # This is the internal user database
+    # The hash value is a bcrypt hash and can be generated with plugin/tools/hash.sh
+
+    _meta:
+      type: "internalusers"
+      config_version: 2
+
+    # Define your internal users here
+
+    ## Demo users
+    ## Add internal_users via hash.sh tool
+
+    admin:
+      hash: "$2y$12$K/SpwjtB.wOHJ/Nc6GVRDuc1h0rM1DfvziFRNPtk27P.c4yDr9njO"
+      reserved: true
+      backend_roles:
+      - "admin"
+      description: "Demo admin user"
+
+    kibanaserver:
+      hash: "$2a$12$4AcgAt3xwOWadA5s5blL6ev39OXDNhmOesEoo33eZtrq2N0YrU3H."
+      reserved: true
+      description: "Demo kibanaserver user"
+
+    kibanaro:
+      hash: "$2a$12$JJSXNfTowz7Uu5ttXfeYpeYE0arACvcwlPBStB1F.MI7f0U9Z4DGC"
+      reserved: false
+      backend_roles:
+      - "kibanauser"
+      - "readall"
+      attributes:
+        attribute1: "value1"
+        attribute2: "value2"
+        attribute3: "value3"
+      description: "Demo kibanaro user"
+
+    logstash:
+      hash: "$2a$12$u1ShR4l4uBS3Uv59Pa2y5.1uQuZBrZtmNfqB3iM/.jL0XoV9sghS2"
+      reserved: false
+      backend_roles:
+      - "logstash"
+      description: "Demo logstash user"
+
+    readall:
+      hash: "$2a$12$ae4ycwzwvLtZxwZ82RmiEunBbIPiAmGZduBAjKN0TXdwQFtCwARz2"
+      reserved: false
+      backend_roles:
+      - "readall"
+      description: "Demo readall user"
+
+    snapshotrestore:
+      hash: "$2y$12$DpwmetHKwgYnorbgdvORCenv4NAK8cPUg8AI6pxLCuWf/ALc0.v7W"
+      reserved: false
+      backend_roles:
+      - "snapshotrestore"
+      description: "Demo snapshotrestore user"
+
+  config.yml: |
+    ---
+    _meta:
+      type: "config"
+      config_version: 2
+
+    config:
+      dynamic:
+        http:
+          anonymous_auth_enabled: false
+        authc:
+          basic_internal_auth_domain:
+            order: 2
+            description: "HTTP basic authentication using the internal user database"
+            http_enabled: true
+            transport_enabled: true
+            http_authenticator:
+              type: basic
+              challenge: false
+            authentication_backend:
+              type: internal
+          internal_auth:
+            order: 0
+            description: "HTTP basic authentication using the internal user database"
+            http_enabled: true
+            transport_enabled: true
+            http_authenticator:
+              type: basic
+              challenge: false
+            authentication_backend:
+              type: internal
+          saml_auth:
+            order: 1
+            description: "SSO Company"
+            http_enabled: true
+            transport_enabled: false
+            http_authenticator:
+              type: saml
+              challenge: true
+              config:
+                idp:
+                  enable_ssl: true
+                  metadata_file: /usr/share/elasticsearch/plugins/opendistro_security/securityconfig/metadata.xml # add as secret
+                  entity_id: # entity ID from metadata
+                sp:
+                  entity_id: # entity ID from IDP
+                  roles_key: Role
+                kibana_url: # kibana url
+                exchange_key: # exchange key
+            authentication_backend:
+              type: noop
+  roles_mapping.yml: |
+      ---
+      _meta:
+        type: "rolesmapping"
+        config_version: 2
+      all_access:
+        reserved: false
+        backend_roles:
+        - "admin"
+        - "sysadmins"
+        users:
+        - "justin.leber"
+        - "andrew.proctor"
+        - "jeff.chonoplis"
+        - "ray.chandler"
+        - "mykola.stolyarenko"
+        - "heorhii.artemiev"
+        - "andrii.savaliev"
+        description: "Maps admin to all_access"
+      all_access_copy:
+        reserved: false
+        users:
+          - "justin.leber"
+          - "andrew.proctor"
+          - "jeff.chonoplis"
+          - "ray.chandler"
+          - "mykola.stolyarenko"
+          - "heorhii.artemiev"
+          - "andrii.savaliev"
+        backend_roles:
+          - "admin"
+          - "editor"
+      own_index:
+        reserved: false
+        users:
+        - "*"
+        description: "Allow full access to an index named like the username"
+      logstash:
+        reserved: false
+        backend_roles:
+        - "logstash"
+        - "sysadmins"
+        - "justin.leber"
+        - "andrew.proctor"
+        - "jeff.chonoplis"
+        - "ray.chandler"
+        - "mykola.stolyarenko"
+        - "heorhii.artemiev"
+        - "andrii.savaliev"
+      kibana_user:
+        reserved: false
+        backend_roles:
+        - "kibanauser"
+        - "admin"
+        users:
+        - "wazuh_user"
+        - "wazuh_admin"
+        - "justin.leber"
+        - "andrew.proctor"
+        - "jeff.chonoplis"
+        - "ray.chandler"
+        - "mykola.stolyarenko"
+        - "heorhii.artemiev"
+        - "andrii.savaliev"
+        description: "Maps kibanauser to kibana_user"
+      readall:
+        reserved: false
+        backend_roles:
+        - "readall"
+        - "sysadmins"
+        users:
+        - "justin.leber"
+        - "andrew.proctor"
+        - "jeff.chonoplis"
+        - "ray.chandler"
+        - "mykola.stolyarenko"
+        - "heorhii.artemiev"
+        - "andrii.savaliev"
+      manage_snapshots:
+        reserved: false
+        backend_roles:
+        - "snapshotrestore"
+        - "sysadmins"
+        - "justin.leber"
+        - "andrew.proctor"
+        - "jeff.chonoplis"
+        - "ray.chandler"
+        - "mykola.stolyarenko"
+        - "heorhii.artemiev"
+        - "andrii.savaliev"
+      kibana_server:
+        reserved: true
+        users:
+        - "kibanaserver"
+        - "sysadmins"
+        - "justin.leber"
+        - "andrew.proctor"
+        - "jeff.chonoplis"
+        - "ray.chandler"
+        - "mykola.stolyarenko"
+        - "heorhii.artemiev"
+        - "andrii.savaliev"
+      wazuh_ui_admin:
+        reserved: true
+        hidden: false
+        backend_roles: []
+        hosts: []
+        users:
+        - "wazuh_admin"
+        - "kibanaserver"
+        - "sysadmins"
+        - "justin.leber"
+        - "andrew.proctor"
+        - "jeff.chonoplis"
+        - "ray.chandler"
+        - "mykola.stolyarenko"
+        - "heorhii.artemiev"
+        - "andrii.savaliev"
+        and_backend_roles: []
+      wazuh_ui_user:
+        reserved: true
+        hidden: false
+        backend_roles: []
+        hosts: []
+        users:
+        - "wazuh_user"
+        - "sysadmins"
+        - "justin.leber"
+        - "andrew.proctor"
+        - "jeff.chonoplis"
+        - "ray.chandler"
+        - "mykola.stolyarenko"
+        - "heorhii.artemiev"
+        - "andrii.savaliev"
+        and_backend_roles: []
+
+  kibana.yml: |
+    ---
+    server.name: kibana
+    server.host: "0"
+    elasticsearch.hosts: https://wazuh-elasticsearch-0.wazuh-elasticsearch:9200
+    elasticsearch.ssl.verificationMode: none
+    elasticsearch.username: kibanaserver
+    elasticsearch.password: kibanaserver
+    elasticsearch.requestHeadersWhitelist: ["securitytenant","Authorization"]
+
+    opendistro_security.multitenancy.enabled: true
+    opendistro_security.multitenancy.tenants.preferred: ["Private", "Global"]
+    opendistro_security.readonly_mode.roles: ["kibana_read_only"]
+
+    # Use this setting if you are running kibana without https
+    opendistro_security.cookie.secure: false
+
+    opendistro_security.auth.type: "saml"
+    server.xsrf.whitelist:  [/_opendistro/_security/saml/acs,/_opendistro/_security/saml/acs/idpinitiated,/_opendistro/_security/saml/logout]
+
+    newsfeed.enabled: false
+    telemetry.optIn: false
+    telemetry.enabled: false
+    security.showInsecureClusterWarning: false
+    map.includeElasticMapsService: false
+    server.defaultRoute: /app/wazuh?security_tenant=global
+kind: ConfigMap
+metadata:
+  name: elastic-odfe-conf
+  namespace: {{ .Values.namespace }}

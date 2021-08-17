@@ -1,0 +1,237 @@
+namespace: wazuh
+domain: # your domain
+lbProtocol: tcp
+lbTargetType: instance
+lbType: external
+lbName: wazuh
+lbScheme: internet-facing
+albCertArn: # your ssl cert
+dns: route53
+name: wazuh
+storageClassName: wazuh-storage
+
+elasticsearch:
+  builtin:
+    enabled: true
+  remote:
+    host: Unset
+  data:
+    size: 50Gi
+  service:
+    port: 9200
+
+wazuh_es:
+  name: wazuh-elasticsearch
+  replicas: 3
+  envVariables:
+    - name: ES_JAVA_OPTS
+      value: -Xms1g -Xmx1g
+    - name: CLUSTER_NAME
+      value: wazuh
+    - name: NETWORK_HOST
+      value: 0.0.0.0
+    - name: NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
+    - name: DISCOVERY_SERVICE
+      value: wazuh-elasticsearch
+    - name: KUBERNETES_NAMESPACE
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.namespace
+    - name: DISABLE_INSTALL_DEMO_CONFIG
+      value: "true"
+  image: amazon/opendistro-for-elasticsearch
+  tag: 1.13.2
+  imagePullPolicy: IfNotPresent
+  esrestPort: 9200
+  esnodesPort: 9300
+  resources:
+    limits:
+      cpu: 2
+      memory: 4Gi
+    requests:
+      cpu: 2
+      memory: 4Gi
+
+disk:
+  storageclass: gp2-encrypted-retained
+  accessmode: ReadWriteOnce
+
+versions:
+  imagesource: wazuh
+  wazuh: 3.13.3_7.9.2
+  nginx: 3.13.3_7.9.2
+  kibana: 3.13.3_7.9.2
+  elasticsearch: 7.9.2
+wazuhmaster:
+  data:
+    size: 50Gi
+wazuhworker:
+  data:
+    size: 50Gi
+
+kibana:
+  name: wazuh-kibana
+  service:
+    name: kibana-eks
+    port: 443
+    targetPort: 5601
+    type: LoadBalancer
+    externalTrafficPolicy: Cluster
+  envVariables:
+    - name: ELASTICSEARCH_URL
+      value: https://wazuh-elasticsearch-0.wazuh-elasticsearch:9200
+    - name: ELASTICSEARCH_USERNAME
+      valueFrom:
+        secretKeyRef:
+          key: username
+          name: elastic-cred
+    - name: ELASTICSEARCH_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          key: password
+          name: elastic-cred
+    - name: SERVER_NAME
+      value: kibana
+    - name: SERVER_SSL_ENABLED
+      value: "true"
+    - name: SERVER_SSL_CERTIFICATE
+      value: /usr/share/kibana/config/cert.pem
+    - name: SERVER_SSL_KEY
+      value: /usr/share/kibana/config/key.pem
+    - name: WAZUH_API_URL
+      value: https://wazuh-manager-master-0.wazuh-cluster
+    - name: API_USERNAME
+      valueFrom:
+        secretKeyRef:
+          key: username
+          name: wazuh-api-cred
+    - name: API_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          key: password
+          name: wazuh-api-cred
+  image: wazuh/wazuh-kibana-odfe
+  tag: 4.1.5
+  imagePullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: 1
+      memory: 2Gi
+    requests:
+      cpu: 1
+      memory: 1Gi
+  busyboxResources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+
+wazuh:
+  name: wazuh-manager-master
+  app: wazuh-manager
+  serviceName: wazuh-cluster
+  workerPort: 1514
+  managerPort: 1515
+  clusterPort: 1516
+  apiPort: 55000
+  service:
+    port: 1515
+  envVariables:
+    - name: ELASTICSEARCH_URL
+      value: https://wazuh-elasticsearch-0.wazuh-elasticsearch:9200
+    - name: ELASTIC_USERNAME
+      valueFrom:
+        secretKeyRef:
+          key: username
+          name: elastic-cred
+    - name: ELASTIC_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          key: password
+          name: elastic-cred
+    - name: FILEBEAT_SSL_VERIFICATION_MODE
+      value: none
+    - name: SSL_CERTIFICATE_AUTHORITIES
+      value: /etc/ssl/root-ca.pem
+    - name: SSL_CERTIFICATE
+      value: /etc/ssl/filebeat.pem
+    - name: SSL_KEY
+      value: /etc/ssl/filebeat.key
+    - name: API_USERNAME
+      valueFrom:
+        secretKeyRef:
+          key: username
+          name: wazuh-api-cred
+    - name: API_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          key: password
+          name: wazuh-api-cred
+    - name: WAZUH_CLUSTER_KEY
+      valueFrom:
+        secretKeyRef:
+          key: key
+          name: wazuh-cluster-key
+  image: wazuh/wazuh-odfe
+  tag: 4.1.5
+  imagePullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: "2"
+      memory: 2Gi
+    requests:
+      cpu: "1"
+      memory: 1Gi
+
+workers:
+  name: wazuh-manager-worker
+  serviceName: wazuh-cluster
+  port: 1514
+  envVariables:
+    - name: ELASTICSEARCH_URL
+      value: https://wazuh-elasticsearch-0.wazuh-elasticsearch:9200
+    - name: ELASTIC_USERNAME
+      valueFrom:
+        secretKeyRef:
+          key: username
+          name: elastic-cred
+    - name: ELASTIC_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          key: password
+          name: elastic-cred
+    - name: FILEBEAT_SSL_VERIFICATION_MODE
+      value: none
+    - name: SSL_CERTIFICATE_AUTHORITIES
+      value: /etc/ssl/root-ca.pem
+    - name: SSL_CERTIFICATE
+      value: /etc/ssl/filebeat.pem
+    - name: SSL_KEY
+      value: /etc/ssl/filebeat.key
+    - name: WAZUH_CLUSTER_KEY
+      valueFrom:
+        secretKeyRef:
+          key: key
+          name: wazuh-cluster-key
+  image: wazuh/wazuh-odfe
+  tag: 4.1.5
+  imagePullPolicy: IfNotPresent
+  service:
+    name: wazuh-workers
+  resources:
+    limits:
+      cpu: "2"
+      memory: 2Gi
+    requests:
+      cpu: "1"
+      memory: 1Gi
+
+serviceAccount:
+  name: wazuh

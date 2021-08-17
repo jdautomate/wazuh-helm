@@ -1,0 +1,16 @@
+apiVersion: v1
+data:
+  admin-key.pem: 
+  admin.pem:
+  filebeat-key.pem:
+  filebeat.pem:
+  kibana-key.pem:
+  kibana.pem:
+  metadata.xml:
+  node-key.pem:
+  node.pem:
+  root-ca.pem:
+metadata:
+  name: odfe-ssl-certs
+  namespace: wazuh
+type: Opaque

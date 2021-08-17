@@ -1,0 +1,8 @@
+apiVersion: v1
+data:
+  authd.pass: # create password for authd
+kind: Secret
+metadata:
+  name: wazuh-authd-pass
+  namespace: wazuh
+type: Opaque

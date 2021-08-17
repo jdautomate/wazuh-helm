@@ -1,0 +1,9 @@
+apiVersion: v1
+data:
+  password: TXlTM2NyMzdQNDUwci4qLQ==
+  username: d2F6dWgtd3Vp
+kind: Secret
+metadata:
+  name: wazuh-api-cred
+  namespace: wazuh
+type: Opaque
